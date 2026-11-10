@@ -1,31 +1,45 @@
-# Change these first
-owner: upptime # Your GitHub organization or username, where this repository lives
-repo: upptime # The name of this repository
+# CoaxHub's status page (ADR-0079 in the CoaxHub repository): probes from GitHub's runners
+# every five minutes, outside sa1, OCI and Cloudflare. Only public addresses, no secrets.
+owner: CoaxHub
+repo: status
 
 sites:
-  - name: Google
-    url: https://www.google.com
-  - name: Wikipedia
-    url: https://en.wikipedia.org
-  - name: Hacker News
-    url: https://news.ycombinator.com
-  - name: Secret Site
-    url: $SECRET_SITE
+  # The public site: 200 and the landing page's text.
+  - name: Site
+    url: https://coaxhub.com/
+    __dangerous__body_down_if_text_missing: "CoaxHub"
+  # The app and its API: 200 with the maintenance flag; maintenance mode (ADR-0064) shows
+  # as degraded, a planned interruption, not as an outage.
+  - name: App and API
+    url: https://coaxhub.com/api/v1/status
+    __dangerous__body_down_if_text_missing: '"maintenance"'
+    __dangerous__body_degraded: '"maintenance":true'
+  # The hub sa1: nginx or the hub answers; a 4xx is up (the listener wants a WebSocket).
+  - name: Hub sa1
+    url: https://sa1.hub.coaxhub.com/
+    expectedStatusCodes: [200, 400, 401, 403, 404, 405, 426]
+  # Station connections: the gateway on 443. Its certificate is CoaxHub's own CA and it
+  # wants a station's certificate, so the probe checks the TCP connection only.
+  - name: Station connections
+    check: tcp-ping
+    url: gw.sa1.coaxhub.com
+    port: 443
 
 status-website:
-  # Add your custom domain name, or remove the `cname` line if you don't have a domain
-  # Uncomment the `baseUrl` line if you don't have a custom domain and add your repo name there
-  cname: demo.upptime.js.org
-  # baseUrl: /your-repo-name
-  logoUrl: https://raw.githubusercontent.com/upptime/upptime.js.org/master/static/img/icon.svg
-  name: Upptime
-  introTitle: "**Upptime** is the open-source uptime monitor and status page, powered entirely by GitHub."
-  introMessage: This is a sample status page which uses **real-time** data from our [GitHub repository](https://github.com/upptime/upptime). No server required — just GitHub Actions, Issues, and Pages. [**Get your own for free**](https://github.com/upptime/upptime)
+  cname: status.coaxhub.com
+  logoUrl: https://coaxhub.com/favicon.svg
+  favicon: https://coaxhub.com/favicon.svg
+  name: CoaxHub status
+  introTitle: "CoaxHub status · Estado de CoaxHub"
+  introMessage: >-
+    Probed every five minutes from outside CoaxHub's servers. Best effort, no SLA.
+    The sign-in email can't be probed from outside: when it fails, it is posted here as an incident.
+    · Se prueba cada cinco minutos desde fuera de los servidores de CoaxHub. Mejor esfuerzo, sin SLA.
+    El email de inicio de sesión no se puede probar desde fuera: cuando falla, se publica acá como incidente.
   navbar:
     - title: Status
       href: /
+    - title: CoaxHub
+      href: https://coaxhub.com
     - title: GitHub
       href: https://github.com/$OWNER/$REPO
-
-# Upptime also supports notifications, assigning issues, and more
-# See https://upptime.js.org/docs/configuration
